@@ -113,20 +113,36 @@ body{
 .iconbtn:active{transform:scale(.9)}
 .iconbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
-/* ───────── 城市切换 ───────── */
-.citybar{display:flex;gap:7px;overflow-x:auto;padding:0 2px 2px;scrollbar-width:none;
-  -webkit-overflow-scrolling:touch}
-.citybar::-webkit-scrollbar{display:none}
-.cchip{flex:none;padding:8px 14px;border-radius:99px;font-size:13px;font-family:inherit;
-  color:rgba(255,255,255,.80);background:rgba(255,255,255,.13);
-  border:.5px solid rgba(255,255,255,.22);cursor:pointer;white-space:nowrap;
-  -webkit-backdrop-filter:blur(22px) saturate(180%);backdrop-filter:blur(22px) saturate(180%);
-  transition:all .26s var(--ease)}
-.cchip:active{transform:scale(.94)}
-.cchip[aria-pressed="true"]{background:rgba(255,255,255,.92);color:#14161c;font-weight:600;
-  border-color:transparent;box-shadow:0 4px 16px -6px rgba(255,255,255,.5)}
-.cchip.add{width:36px;padding:0;display:flex;align-items:center;justify-content:center;
-  font-size:18px;line-height:1;font-weight:400}
+/* ───────── 城市搜索 ───────── */
+.searchwrap{display:flex;flex-direction:column;gap:9px}
+.search{display:flex;align-items:center;gap:9px;padding:5px 5px 5px 15px;border-radius:99px;
+  background:rgba(255,255,255,.15);border:.5px solid rgba(255,255,255,.26);
+  -webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%);
+  transition:background .25s,border-color .25s}
+.search:focus-within{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45)}
+.search .ico{flex:none;width:17px;height:17px;stroke:rgba(255,255,255,.66);fill:none;
+  stroke-width:2;stroke-linecap:round}
+.search input{flex:1;min-width:0;background:none;border:none;outline:none;color:#fff;
+  font-size:15px;font-family:inherit;padding:9px 0;-webkit-appearance:none;appearance:none}
+.search input::placeholder{color:rgba(255,255,255,.46)}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none}
+.sbtn{flex:none;width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(255,255,255,.92);color:#14161c;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .26s var(--ease),opacity .25s}
+.sbtn:active{transform:scale(.9)}
+.sbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.1;stroke-linecap:round}
+
+.recent{display:flex;gap:7px;overflow-x:auto;padding:0 2px;scrollbar-width:none}
+.recent::-webkit-scrollbar{display:none}
+.rhint{flex:none;font-size:11.5px;color:rgba(255,255,255,.42);align-self:center;letter-spacing:.3px}
+.rchip{flex:none;padding:7px 13px;border-radius:99px;font-size:12.5px;font-family:inherit;
+  color:rgba(255,255,255,.82);background:rgba(255,255,255,.10);
+  border:.5px solid rgba(255,255,255,.18);cursor:pointer;white-space:nowrap;
+  transition:all .25s var(--ease)}
+.rchip:active{transform:scale(.93)}
+.rchip[aria-current="true"]{background:rgba(255,255,255,.90);color:#14161c;font-weight:600;
+  border-color:transparent}
 
 /* ───────── 玻璃砖 ───────── */
 .glass{position:relative;border-radius:var(--r);background:var(--card);
@@ -276,7 +292,17 @@ body{
   </header>
 
   <!-- 城市切换 -->
-  <nav class="citybar" id="citybar" aria-label="切换城市"></nav>
+  <div class="searchwrap">
+    <form class="search" id="searchForm" role="search">
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/></svg>
+      <input id="citySearch" type="text" inputmode="search" enterkeyhint="search"
+             placeholder="搜索城市，如 石家庄" autocomplete="off" aria-label="搜索城市">
+      <button class="sbtn" type="submit" aria-label="查询天气">
+        <svg viewBox="0 0 24 24"><path d="M5 12h13M12 5l7 7-7 7"/></svg>
+      </button>
+    </form>
+    <div class="recent" id="recent" hidden></div>
+  </div>
 
   <!-- 当前 -->
   <section class="glass card">
@@ -343,21 +369,13 @@ body{
       <div class="hint">控制台 → 产品管理 → 天气实况 → 私钥。<a href="https://www.seniverse.com/dashboard" target="_blank" rel="noopener">去获取</a></div>
     </div>
 
-    <div class="row">
-      <div class="field">
-        <label>城市</label>
-        <input type="text" id="cityInput" placeholder="beijing" autocomplete="off">
-      </div>
-      <div class="field">
-        <label>单位</label>
-        <select id="unitInput">
-          <option value="c">摄氏度 ℃</option>
-          <option value="f">华氏度 ℉</option>
-        </select>
-      </div>
-    </div>
     <div class="field">
-      <div class="hint" style="margin-top:-4px">城市可填拼音（beijing）、中文（北京）或城市 ID（WX4FBXXFKE4F）。</div>
+      <label>温度单位</label>
+      <select id="unitInput">
+        <option value="c">摄氏度 ℃</option>
+        <option value="f">华氏度 ℉</option>
+      </select>
+      <div class="hint">城市在主界面顶部的搜索框里切换，支持中文、拼音和城市 ID。</div>
     </div>
 
     <button class="btn" id="save">保存并刷新</button>
@@ -372,17 +390,12 @@ body{
 (() => {
   'use strict';
 
-  /* 预设城市：q 是查询串（拼音，接口最稳），n 是显示名 */
-  const CITIES = [
-    { q: 'beijing', n: '北京' }, { q: 'shanghai', n: '上海' },
-    { q: 'guangzhou', n: '广州' }, { q: 'shenzhen', n: '深圳' },
-    { q: 'hangzhou', n: '杭州' }, { q: 'chengdu', n: '成都' },
-    { q: 'wuhan', n: '武汉' }, { q: 'nanjing', n: '南京' },
-    { q: 'xian', n: '西安' }, { q: 'chongqing', n: '重庆' },
-  ];
+  /* 首次打开用北京；之后完全由搜索决定 */
+  const DEFAULT_CITY = { q: 'beijing', n: '北京' };
 
   const LS = {
-    key: 'wx.key', city: 'wx.city', unit: 'wx.unit', cache: 'wx.cache', theme: 'wx.theme',
+    key: 'wx.key', city: 'wx.city', unit: 'wx.unit', cache: 'wx.cache',
+    theme: 'wx.theme', recent: 'wx.recent',
   };
   const state = {
     key: localStorage.getItem(LS.key) || '',
@@ -390,6 +403,7 @@ body{
     unit: localStorage.getItem(LS.unit) || 'c',
     theme: localStorage.getItem(LS.theme) || 'light',
     displayName: '',
+    recent: [],
     data: null,
   };
   const CACHE_MS = 10 * 60 * 1000;   // 教程建议：10 分钟一次，省配额
@@ -400,8 +414,9 @@ body{
     codeTag: $('#codeTag'), updated: $('#updated'), sourceTag: $('#sourceTag'),
     nowIcon: $('#nowIcon'), forecast: $('#forecast'), life: $('#life'),
     code: $('#code'), pathhint: $('#pathhint'), notice: $('#notice'), noticeText: $('#noticeText'),
-    sheet: $('#sheet'), keyInput: $('#keyInput'), cityInput: $('#cityInput'), unitInput: $('#unitInput'),
-    toast: $('#toast'), refresh: $('#refresh'), fcTag: $('#fcTag'), citybar: $('#citybar'),
+    sheet: $('#sheet'), keyInput: $('#keyInput'), unitInput: $('#unitInput'),
+    toast: $('#toast'), refresh: $('#refresh'), fcTag: $('#fcTag'),
+    searchForm: $('#searchForm'), searchInput: $('#citySearch'), recent: $('#recent'),
   };
 
   let toastTimer;
@@ -537,37 +552,39 @@ body{
   }
 
   /* ───── 渲染 ───── */
-  /* ───── 城市切换 ───── */
-  function renderCityBar(scrollToCurrent) {
-    const list = CITIES.slice();
-    const cur = state.city.toLowerCase();
-    if (!list.some((c) => c.q === cur)) {
-      list.unshift({ q: state.city, n: state.displayName || state.city });
-    }
-    el.citybar.innerHTML = list.map((c) => `
-      <button class="cchip" aria-pressed="${c.q.toLowerCase() === cur}"
-        data-q="${escapeHtml(c.q)}">${escapeHtml(c.n)}</button>`).join('')
-      + '<button class="cchip add" id="addCity" aria-label="添加城市">+</button>';
-
-    el.citybar.querySelectorAll('.cchip[data-q]').forEach((b) => {
-      b.onclick = () => switchCity(b.dataset.q, b.textContent);
-    });
-    const add = el.citybar.querySelector('#addCity');
-    if (add) add.onclick = openSheet;
-
-    if (scrollToCurrent) {
-      const on = el.citybar.querySelector('[aria-pressed="true"]');
-      if (on) on.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
-    }
+  /* ───── 城市搜索 ───── */
+  function loadRecent() {
+    try { return JSON.parse(localStorage.getItem(LS.recent) || '[]'); } catch (e) { return []; }
   }
 
-  function switchCity(q, name) {
-    if (q.toLowerCase() === state.city.toLowerCase()) return;
-    state.city = q;
-    state.displayName = name || q;
-    localStorage.setItem(LS.city, q);
-    renderCityBar(true);
-    toast('切换到 ' + state.displayName);
+  function pushRecent(q, n) {
+    const key = String(q).toLowerCase();
+    state.recent = [{ q, n: n || q }, ...state.recent.filter((x) => x.q.toLowerCase() !== key)]
+      .slice(0, 5);
+    localStorage.setItem(LS.recent, JSON.stringify(state.recent));
+  }
+
+  function renderRecent() {
+    if (!state.recent.length) { el.recent.hidden = true; el.recent.innerHTML = ''; return; }
+    el.recent.hidden = false;
+    const cur = state.city.toLowerCase();
+    el.recent.innerHTML = '<span class="rhint">最近</span>' + state.recent.map((c) => `
+      <button type="button" class="rchip" data-q="${escapeHtml(c.q)}"
+        aria-current="${c.q.toLowerCase() === cur}">${escapeHtml(c.n)}</button>`).join('');
+    el.recent.querySelectorAll('.rchip').forEach((b) => {
+      b.onclick = () => doSearch(b.dataset.q, b.textContent);
+    });
+  }
+
+  function doSearch(raw, label) {
+    const term = String(raw || '').trim();
+    if (!term) { toast('请输入城市名'); el.searchInput.focus(); return; }
+    state.city = term;
+    state.displayName = label || term;
+    localStorage.setItem(LS.city, term);
+    pushRecent(term, label || term);
+    renderRecent();
+    toast('查询 ' + (label || term));
     load(true);
   }
 
@@ -656,11 +673,11 @@ body{
       '取值路径：results[0].now.temperature  →  ' +
       (now.temperature != null ? now.temperature : '—');
 
-    // 只有真实数据才用接口返回的官方城市名刷新 chip
+    // 用接口返回的官方城市名修正显示（搜索词可能和官方名不同）
     if (!isDemo && loc.name) {
       state.displayName = loc.name;
-      const activeChip = el.citybar.querySelector('.cchip[aria-pressed="true"]');
-      if (activeChip && activeChip.textContent !== loc.name) activeChip.textContent = loc.name;
+      const hit = state.recent.find((x) => x.q.toLowerCase() === state.city.toLowerCase());
+      if (hit && hit.n !== loc.name) { hit.n = loc.name; localStorage.setItem(LS.recent, JSON.stringify(state.recent)); renderRecent(); }
     }
 
     document.title = `${cityLabel} ${now.temperature != null ? now.temperature + '°' : ''} · 实时天气`;
@@ -680,7 +697,6 @@ body{
   /* ───── 设置 ───── */
   function openSheet() {
     el.keyInput.value = state.key;
-    el.cityInput.value = state.city;
     el.unitInput.value = state.unit;
     el.sheet.classList.add('open');
   }
@@ -692,15 +708,11 @@ body{
 
   $('#save').onclick = () => {
     state.key = el.keyInput.value.trim();
-    state.city = el.cityInput.value.trim() || 'beijing';
     state.unit = el.unitInput.value;
     localStorage.setItem(LS.key, state.key);
-    localStorage.setItem(LS.city, state.city);
     localStorage.setItem(LS.unit, state.unit);
     localStorage.removeItem(LS.cache);
-    state.displayName = (CITIES.find((c) => c.q.toLowerCase() === state.city.toLowerCase()) || {}).n || state.city;
     closeSheet();
-    renderCityBar(true);
     toast(state.key ? '已保存，正在获取' : '未填私钥，保持演示模式');
     load(true);
   };
@@ -717,6 +729,14 @@ body{
 
   el.refresh.onclick = () => { load(true); toast('正在刷新'); };
 
+  el.searchForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const term = el.searchInput.value.trim();
+    doSearch(term);
+    if (term) el.searchInput.value = '';   // 清空，避免与当前城市不一致
+    el.searchInput.blur();
+  });
+
   /* 主题：跟随系统，也记手动选择 */
   function applyTheme(t) {
     document.documentElement.dataset.theme = t;
@@ -725,8 +745,12 @@ body{
   applyTheme(state.theme);
 
   /* 启动 */
-  state.displayName = (CITIES.find((c) => c.q.toLowerCase() === state.city.toLowerCase()) || {}).n || state.city;
-  renderCityBar(false);
+  state.recent = loadRecent();
+  const savedHit = state.recent.find(
+    (x) => x.q.toLowerCase() === state.city.toLowerCase());
+  state.displayName = savedHit ? savedHit.n
+    : (state.city.toLowerCase() === DEFAULT_CITY.q ? DEFAULT_CITY.n : state.city);
+  renderRecent();
   load(false);
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
