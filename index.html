@@ -328,7 +328,7 @@ body{
   <section class="glass card">
     <div class="h">
       <h2>未来三天</h2>
-      <span class="meta" id="fcTag">白天 / 夜间</span>
+      <span class="meta" id="fcTag">最高 / 最低</span>
     </div>
     <div class="fc" id="forecast"></div>
   </section>
@@ -510,6 +510,7 @@ body{
   const FORECAST = (lat, lon, unit) => 'https://api.open-meteo.com/v1/forecast'
     + `?latitude=${lat}&longitude=${lon}`
     + '&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m'
+    + '&hourly=weather_code'
     + '&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max'
     + '&timezone=auto&forecast_days=3'
     + `&temperature_unit=${unit === 'f' ? 'fahrenheit' : 'celsius'}`;
@@ -554,6 +555,41 @@ body{
     ];
   }
 
+  /* WMO 代码的「显著程度」排序，用于挑出剩余时段里最值得提示的那个 */
+  function rankOf(code) {
+    const c = parseInt(code, 10);
+    if (Number.isNaN(c)) return 0;
+    if (c === 0) return 0;
+    if (c === 1) return 1;
+    if (c === 2) return 2;
+    if (c === 3) return 3;
+    if (c === 45 || c === 48) return 4;
+    if (c >= 51 && c <= 57) return 5;
+    if ((c >= 61 && c <= 67) || (c >= 80 && c <= 82)) return 6;
+    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return 7;
+    if (c >= 95) return 8;
+    return 3;
+  }
+
+  /* 今天：取「从现在到今夜」的逐小时代码序列，凌晨那点雨不再算进全天代表天气 */
+  function todayCodes(om) {
+    const h = om.hourly;
+    const curT = (om.current && om.current.time) || '';
+    if (!h || !h.time || !h.weather_code || curT.length < 13) return [];
+
+    const day = curT.slice(0, 10);
+    const fromHour = Number(curT.slice(11, 13));
+    const out = [];
+
+    h.time.forEach((t, i) => {
+      if (!t.startsWith(day)) return;
+      if (Number(t.slice(11, 13)) < fromHour) return;
+      const c = h.weather_code[i];
+      if (c != null) out.push(c);
+    });
+    return out;
+  }
+
   /* 把 Open-Meteo 响应整理成页面内部结构：results[0].now.xxx */
   function shapeData(geo, om, unit) {
     const cur = om.current || {};
@@ -561,11 +597,23 @@ body{
     const name = String(geo.name || '').replace(/市$/, '');
     const path = [geo.admin1, geo.country].filter(Boolean).join(' · ');
 
+    const seq = todayCodes(om);
     const days = (d.time || []).map((t, i) => {
-      const code = d.weather_code ? d.weather_code[i] : null;
+      const raw = d.weather_code ? d.weather_code[i] : null;
+      let code = raw;
+      let text = wmoText(raw, 1);
+
+      if (i === 0 && seq.length) {
+        const first = seq[0];
+        const peak = seq.reduce((a, b) => (rankOf(b) > rankOf(a) ? b : a), seq[0]);
+        code = peak;
+        // 白天有变化就写成「晴转多云」，和国内天气应用的读法一致
+        text = first !== peak ? wmoText(first, 1) + '转' + wmoText(peak, 1) : wmoText(peak, 1);
+      }
+
       return {
         date: t,
-        text_day: wmoText(code, 1),
+        text_day: text,
         code_day: code == null ? '' : String(code),
         text_night: wmoText(code, 0),
         code_night: code == null ? '' : String(code),
@@ -687,11 +735,11 @@ body{
     return `${hh}:${mm} 更新`;
   }
 
-  function fmtDay(dateStr) {
+  function fmtDay(dateStr, index) {
+    if (index === 0) return '今天';
     const d = new Date(dateStr + 'T00:00:00');
     if (Number.isNaN(d.getTime())) return dateStr;
-    const w = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()];
-    return `${w}`;
+    return ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()];
   }
 
   function render(data) {
@@ -722,9 +770,9 @@ body{
     // 预报
     const days = (data.daily && data.daily.results && data.daily.results[0] &&
       data.daily.results[0].daily) || [];
-    el.forecast.innerHTML = days.slice(0, 3).map((d) => `
+    el.forecast.innerHTML = days.slice(0, 3).map((d, i) => `
       <div class="day">
-        <div class="dw">${escapeHtml(fmtDay(d.date))}</div>
+        <div class="dw">${escapeHtml(fmtDay(d.date, i))}</div>
         <div class="di" style="color:${toneOf(d.code_day)}"><svg viewBox="0 0 24 24">${iconOf(d.code_day)}</svg></div>
         <div class="dt">${escapeHtml(d.text_day || '')}</div>
         <div><span class="th">${escapeHtml(d.high ?? '—')}°</span><span class="tl">${escapeHtml(d.low ?? '—')}°</span></div>
