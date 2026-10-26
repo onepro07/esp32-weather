@@ -1,5 +1,5 @@
 /* 离线缓存：网络优先，断网回落到缓存 */
-const CACHE = 'esp32-weather-v3';
+const CACHE = 'esp32-weather-v4';
 const ASSETS = [
   './',
   './index.html',
